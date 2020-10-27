@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "156549125288",
+    "firebase_url": "https://linemsgcatch.firebaseio.com",
+    "project_id": "linemsgcatch",
+    "storage_bucket": "linemsgcatch.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:156549125288:android:f3f4b6e209e39f42f91e9d",
+        "android_client_info": {
+          "package_name": "com.example.linemsgcatch"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "156549125288-c8hlilgct6dvardm3aupvmf5a9mpac4k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWNrMzDtse5e96Dh08JC-xZsZIhZFBo7o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "156549125288-c8hlilgct6dvardm3aupvmf5a9mpac4k.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
