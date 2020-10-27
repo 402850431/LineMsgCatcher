@@ -9,17 +9,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-
-        <!--    註冊通知欄擷取的服務 NotificationMonitorService   -->
-        <service android:name=".service.NotificationMonitorService"
+        <!-- 註冊通知欄擷取的服務 NotificationMonitorService -->
+        <service
+            android:name=".service.NotificationMonitorService"
             android:label="NotificationMonitor"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
-
-        <service android:name=".service.MainService"/>
+        <service android:name=".service.MainService" />
 
         <activity android:name=".ui.MainActivity">
             <intent-filter>
@@ -28,6 +27,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".ui.LoginActivity"></activity>
+
     </application>
 
 </manifest>
