@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -11,9 +12,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationManagerCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.linemsgcatch.service.MainService
 import com.example.linemsgcatch.data.db.MemberDatabaseHelper
 import com.example.linemsgcatch.data.MessageOutput
@@ -108,15 +111,17 @@ class MainActivity : BaseEventBusActivity() {
         val nowTime = SimpleDateFormat("MM/dd hh:mm:ss", Locale.getDefault()).format(System.currentTimeMillis())
         event.apply {
             val splitStr = text?.split(" : ")
+            val name = if (splitStr?.size?:0 > 1) splitStr?.firstOrNull() else title
+            val content = if (splitStr?.size?:0 > 1) splitStr?.get(1) else text
             dataList.add(
                 MessageOutput(
-                    splitStr?.firstOrNull(),
-                    splitStr?.get(1),
-                    smallIcon,
-                    nowTime
+                    name,
+                    content,
+                    nowTime,
+                    pic
                 )
             )
-            mSql?.addData(splitStr?.firstOrNull(), splitStr?.get(1), nowTime)
+            mSql?.addData(name, content, nowTime)
 
             mRVAdapter.addData(dataList.last())
             rv.scrollToPosition(dataList.size - 1)
@@ -137,6 +142,7 @@ class MainActivity : BaseEventBusActivity() {
 
         override fun getItemCount(): Int = mDataList.size
 
+        @RequiresApi(Build.VERSION_CODES.M)
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             val data = mDataList[position]
             when (holder) {
@@ -145,7 +151,8 @@ class MainActivity : BaseEventBusActivity() {
                         tvName.text = data.name
                         tvMsg.text = data.content
                         tvTime.text = data.time
-                        imgIcon.setImageDrawable(data.icon)
+                        imgIcon.setImageIcon(data.pic)
+//                        Glide.with(imgIcon.context).load(data.pic).error(android.R.drawable.stat_notify_error).into(imgIcon)
                     }
                 }
             }

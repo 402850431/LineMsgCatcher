@@ -1,5 +1,5 @@
 package com.example.linemsgcatch.data
 
-import android.graphics.drawable.Drawable
+import android.graphics.drawable.Icon
 
-data class MessageOutput(val name: String?, val content: String?, val icon: Drawable?, val time: String) {}
+data class MessageOutput(val name: String?, val content: String?, val time: String, val pic: Icon?)

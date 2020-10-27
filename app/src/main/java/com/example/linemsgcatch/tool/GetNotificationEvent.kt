@@ -1,7 +1,6 @@
 package com.example.linemsgcatch.tool
 
-import android.graphics.drawable.Drawable
+import android.graphics.drawable.Icon
 
-class GetNotificationEvent(val packageName: String?, val title: String?,
-                           val text: String?, val smallIcon: Drawable?
+class GetNotificationEvent(val title: String?, val text: String?, val pic: Icon?
 )
