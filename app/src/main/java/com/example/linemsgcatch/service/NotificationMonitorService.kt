@@ -1,15 +1,22 @@
 package com.example.linemsgcatch.service
 
 import android.app.Notification
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
+import android.net.Uri
 import android.os.Build
+import android.provider.MediaStore
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import com.example.linemsgcatch.tool.GetNotificationEvent
 import org.greenrobot.eventbus.EventBus
+import java.io.ByteArrayOutputStream
 
 
 class NotificationMonitorService : NotificationListenerService() {
@@ -19,25 +26,27 @@ class NotificationMonitorService : NotificationListenerService() {
         val title = extras.getString(Notification.EXTRA_TITLE)
         val text = extras.getString(Notification.EXTRA_TEXT)
         var pic: Icon? = null
+//        var testUri: Uri? = null
         try { //取得通知欄的小圖示
 //            val iconId = extras.getInt(Notification.EXTRA_LARGE_ICON)
-            val bmp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                sbn.notification.getLargeIcon() as Icon
-            } else {
-                null
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                pic = sbn.notification.getLargeIcon() as Icon
             }
-
-            pic = bmp
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
 //        val largeIcon = sbn.notification.getLargeIcon().resId //取得通知欄的大圖示
-        if (title == "Paul股期A群" || title == "Android_Cheryl"|| title == "Android_Cheryl(重要)") {
+        if (title == "Paul股期A群" || title == "Android_Cheryl" || title == "Android_Cheryl(重要)") {
+
+            val splitStr = text?.split(" : ")
+            val name = if (splitStr?.size ?: 0 > 1) splitStr?.firstOrNull() else title
+            val content = if (splitStr?.size ?: 0 > 1) splitStr?.get(1) else text
+
             EventBus.getDefault().post(
                 GetNotificationEvent(
-                    title,
-                    text,
+                    name,
+                    content,
                     pic
                 )
             )
@@ -46,4 +55,5 @@ class NotificationMonitorService : NotificationListenerService() {
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) { //通知被刪除將觸發
     }
+
 }

@@ -57,8 +57,7 @@ class MemberDatabaseHelper(context: Context): SQLiteOpenHelper(context, "myMsg.d
                     val item = MessageOutput(
                         name,
                         content,
-                        time,
-                        null
+                        time
                     )
                     members.add(item)
                 } while(cursor.moveToNext())
