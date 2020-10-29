@@ -1,22 +1,12 @@
 package com.example.linemsgcatch.service
 
 import android.app.Notification
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
-import android.net.Uri
 import android.os.Build
-import android.provider.MediaStore
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import android.util.Log
 import com.example.linemsgcatch.tool.GetNotificationEvent
 import org.greenrobot.eventbus.EventBus
-import java.io.ByteArrayOutputStream
 
 
 class NotificationMonitorService : NotificationListenerService() {
@@ -37,7 +27,7 @@ class NotificationMonitorService : NotificationListenerService() {
         }
 
 //        val largeIcon = sbn.notification.getLargeIcon().resId //取得通知欄的大圖示
-        if (title == "Paul股期A群" || title == "Android_Cheryl" || title == "Android_Cheryl(重要)") {
+        if (title == "Paul股期A群" || title == "Android_Cheryl" || title == "Android_Cheryl(重要)" || title == "me") {
 
             val splitStr = text?.split(" : ")
             val name = if (splitStr?.size ?: 0 > 1) splitStr?.firstOrNull() else title

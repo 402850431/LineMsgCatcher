@@ -13,25 +13,18 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationManagerCompat
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.linemsgcatch.R
 import com.example.linemsgcatch.data.MessageOutput
 import com.example.linemsgcatch.data.UserOutput
-import com.example.linemsgcatch.data.db.MemberDatabaseHelper
 import com.example.linemsgcatch.service.MainService
 import com.example.linemsgcatch.tool.GetNotificationEvent
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageException
+import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
 import com.xwray.groupie.Item
 import kotlinx.android.synthetic.main.activity_main.*
@@ -41,7 +34,6 @@ import org.greenrobot.eventbus.ThreadMode
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 
 class MainActivity : BaseEventBusActivity() {
 
@@ -49,10 +41,9 @@ class MainActivity : BaseEventBusActivity() {
         const val TAG = "MainActivity"
     }
 
-    private val mRVAdapter = RVAdapter()
+//    private val mRVAdapter = RVAdapter()
 
-    //    private val mRVAdapter = GroupAdapter<GroupieViewHolder>()
-//    private var mSql: MemberDatabaseHelper? = null
+    private val mRVAdapter = GroupAdapter<GroupieViewHolder>()
     private var dataList: MutableList<MessageOutput> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,14 +51,15 @@ class MainActivity : BaseEventBusActivity() {
         setContentView(R.layout.activity_main)
 
         getPermission()
-//        initSql()
         initRv()
-//        initCbListener()
+        listenForMessage()
+        initCbListener()
         startService(Intent(this, MainService::class.java))
     }
 
     private fun initCbListener() {
         cb_important.setOnCheckedChangeListener { buttonView, isChecked ->
+            /*
             if (isChecked) {
                 val filterDataList =
                     dataList.filter { it.name?.contains("(重要)") == true } as MutableList<MessageOutput>
@@ -75,13 +67,10 @@ class MainActivity : BaseEventBusActivity() {
             } else {
                 mRVAdapter.setData(dataList)
             }
+            */
         }
 
 
-    }
-
-    private fun initSql() {
-//        mSql = MemberDatabaseHelper(this)
     }
 
     private fun initRv() {
@@ -93,9 +82,46 @@ class MainActivity : BaseEventBusActivity() {
             this.layoutManager = linearLayoutManager
         }
 
-//        dataList = mSql?.getData()?: mutableListOf()
-        mRVAdapter.setData(dataList)
+//        mRVAdapter.setData(dataList)
         rv.scrollToPosition(dataList.size - 1)
+    }
+
+    private fun listenForMessage() {
+        val ref = FirebaseDatabase.getInstance().getReference("/message")
+        ref.addChildEventListener(object : ChildEventListener {
+
+            /*
+            override fun onDataChange(snapshot: DataSnapshot) {
+                snapshot.children.forEach {
+                    val message = it.getValue(MessageOutput::class.java)
+                    if (message != null) {
+                        mRVAdapter.add(MsgItem(message))
+                    }
+                }
+            }
+*/
+            override fun onCancelled(error: DatabaseError) {
+
+            }
+
+            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+            }
+
+            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+            }
+
+            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                val message = snapshot.getValue(MessageOutput::class.java)
+                if (message != null) {
+                    mRVAdapter.add(MsgItem(message))
+                    scrollToBottom()
+                }
+            }
+
+            override fun onChildRemoved(snapshot: DataSnapshot) {
+            }
+
+        })
     }
 
     private fun getPermission() {
@@ -126,7 +152,7 @@ class MainActivity : BaseEventBusActivity() {
 
     //    private var profileImgUrl: String? = null
     @RequiresApi(Build.VERSION_CODES.M)
-    private fun storeToFirebase(name: String?, pic: Icon?, content: String?, nowTime: String?) {
+    private fun storeToFirebase(name: String?, pic: Icon?, content: String?, nowTime: Long?) {
         Log.e(TAG, "storeToFirebase")
 
         storeMessage(name, content, nowTime)
@@ -165,9 +191,8 @@ class MainActivity : BaseEventBusActivity() {
             }
     }
 
-    private fun storeMessage(name: String?, content: String?, nowTime: String?) {
-        val msgRef =
-            FirebaseDatabase.getInstance().getReference("/message/${System.currentTimeMillis()}")
+    private fun storeMessage(name: String?, content: String?, nowTime: Long?) {
+        val msgRef = FirebaseDatabase.getInstance().getReference("/message").push()
         val msg = MessageOutput(name, content, nowTime)
         msgRef.setValue(msg)
             .addOnSuccessListener {
@@ -176,7 +201,10 @@ class MainActivity : BaseEventBusActivity() {
             .addOnFailureListener {
                 Log.e(TAG, "upload message failed")
             }
+    }
 
+    private fun scrollToBottom() {
+        rv.scrollToPosition(mRVAdapter.itemCount - 1)
     }
 
     private fun isUserExist(name: String): Boolean {
@@ -222,7 +250,7 @@ class MainActivity : BaseEventBusActivity() {
 
     private fun getImageUri(inContext: Context, title: String, inImage: Bitmap): Uri? {
         val bytes = ByteArrayOutputStream()
-        inImage.compress(Bitmap.CompressFormat.JPEG, 30, bytes)
+        inImage.compress(Bitmap.CompressFormat.PNG, 30, bytes)
         val path = MediaStore.Images.Media.insertImage(
             inContext.contentResolver,
             inImage,
@@ -238,23 +266,8 @@ class MainActivity : BaseEventBusActivity() {
     fun onEvent(event: GetNotificationEvent) {
         Log.e(">>>", "GetNotificationEvent")
 
-        val nowTime = SimpleDateFormat(
-            "MM/dd hh:mm:ss",
-            Locale.getDefault()
-        ).format(System.currentTimeMillis())
         event.apply {
-            storeToFirebase(name, pic, content, nowTime)
-            /*
-            dataList.add(
-                MessageOutput(
-                    name,
-                    content,
-                    nowTime,
-                    pic
-                )
-            )
-            */
-//            mSql?.addData(name, content, nowTime)
+            storeToFirebase(name, pic, content, System.currentTimeMillis())
 //            mRVAdapter.addData(dataList.last())
 //            rv.scrollToPosition(dataList.size - 1)
         }
@@ -262,7 +275,12 @@ class MainActivity : BaseEventBusActivity() {
 
 //--------- rv adapter ---------
 
-    class MsgItem(val msgItem: MessageOutput) : Item<GroupieViewHolder>() {
+    class MsgItem(private val msgItem: MessageOutput) : Item<GroupieViewHolder>() {
+
+        private fun nowTimeFormatter(time: Long?): String {
+            return SimpleDateFormat("MM/dd hh:mm:ss", Locale.getDefault()).format(time)
+        }
+
         override fun getLayout(): Int {
             return R.layout.content_msg_list_rv
         }
@@ -272,59 +290,14 @@ class MainActivity : BaseEventBusActivity() {
             viewHolder.itemView.apply {
                 tv_name.text = msgItem.name
                 tv_msg.text = msgItem.content
-                tv_time.text = msgItem.time
-//                img_icon.setImageIcon(msgItem.pic)
-            }
-
-        }
-
-    }
-
-
-    class RVAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-
-        private val mDataList: ArrayList<MessageOutput> = ArrayList()
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-            return MyViewHolder(
-                LayoutInflater.from(parent.context)
-                    .inflate(R.layout.content_msg_list_rv, parent, false)
-            )
-        }
-
-        override fun getItemCount(): Int = mDataList.size
-
-        @RequiresApi(Build.VERSION_CODES.M)
-        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            val data = mDataList[position]
-            when (holder) {
-                is MyViewHolder -> {
-                    holder.apply {
-                        tvName.text = data.name
-                        tvMsg.text = data.content
-                        tvTime.text = data.time
-//                        imgIcon.setImageIcon(data.pic)
-                    }
+                tv_time.text = nowTimeFormatter(msgItem.time)
+                val imgRef = FirebaseStorage.getInstance().getReference("/images/${msgItem.name}")
+                imgRef.downloadUrl.addOnSuccessListener {
+                    Glide.with(this).load(it.toString()).error(android.R.drawable.stat_notify_error)
+                        .into(img_icon)
                 }
             }
-        }
 
-        inner class MyViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val tvName: TextView = view.findViewById(R.id.tv_name)
-            val tvMsg: TextView = view.findViewById(R.id.tv_msg)
-            val tvTime: TextView = view.findViewById(R.id.tv_time)
-            val imgIcon: ImageView = view.findViewById(R.id.img_icon)
-        }
-
-        fun setData(dataList: MutableList<MessageOutput>) {
-            mDataList.clear()
-            mDataList.addAll(dataList)
-            notifyDataSetChanged()
-        }
-
-        fun addData(data: MessageOutput) {
-            mDataList.add(data)
-            notifyItemInserted(mDataList.lastIndex)
         }
 
     }

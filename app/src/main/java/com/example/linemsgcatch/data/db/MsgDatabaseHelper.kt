@@ -53,7 +53,7 @@ class MemberDatabaseHelper(context: Context): SQLiteOpenHelper(context, "myMsg.d
 //                    val id = cursor.getInt(cursor.getColumnIndex(ID))
                     val name = cursor.getString(cursor.getColumnIndex(NAME))
                     val content = cursor.getString(cursor.getColumnIndex(CONTENT))
-                    val time = cursor.getString(cursor.getColumnIndex(TIME))
+                    val time = cursor.getLong(cursor.getColumnIndex(TIME))
                     val item = MessageOutput(
                         name,
                         content,
