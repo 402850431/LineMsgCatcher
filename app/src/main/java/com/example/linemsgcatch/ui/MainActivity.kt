@@ -29,7 +29,7 @@ import com.example.linemsgcatch.data.db.MemberDatabaseHelper
 import com.example.linemsgcatch.service.MainService
 import com.example.linemsgcatch.tool.GetNotificationEvent
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.*
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
 import com.xwray.groupie.GroupieViewHolder
@@ -128,69 +128,71 @@ class MainActivity : BaseEventBusActivity() {
     @RequiresApi(Build.VERSION_CODES.M)
     private fun storeToFirebase(name: String?, pic: Icon?, content: String?, nowTime: String?) {
         Log.e(TAG, "storeToFirebase")
-        val picRef = FirebaseStorage.getInstance().getReference("/images/$name")
-        picRef.child("/images/$name").downloadUrl //search if exist in db
+
+        storeMessage(name, content, nowTime)
+        if (name == null || pic == null) return
+        if (!isUserExist(name)) {//search if exist in db
+            val picRef = FirebaseStorage.getInstance().getReference("/images/$name")
+            //TODO Cheryl : better way to get uri ?
+            val drawable = pic.loadDrawable(this)
+            val bitmap = drawableToBitmap(drawable) ?: return
+            val picUri = getImageUri(this, name, bitmap) ?: return
+
+            picRef.putFile(picUri)
+                .addOnSuccessListener {
+                    picRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                        Log.d(TAG, "upload user img succeed. File Location: $downloadUri")
+                        val profileImgUrl = downloadUri.toString()
+                        storeUser(name, profileImgUrl)
+                    }
+                }
+                .addOnFailureListener {
+                    Log.e(TAG, "upload user img failed: ${it.message}")
+                }
+        }
+
+    }
+
+    private fun storeUser(name: String, profileImgUrl: String) {
+        val userRef = FirebaseDatabase.getInstance().getReference("/users/$name")
+        val user = UserOutput(name, profileImgUrl, null)
+        userRef.setValue(user)
             .addOnSuccessListener {
-                Log.e(">>>", "file exist. uri = $it")
+                Log.d(TAG, "upload user succeed")
             }
             .addOnFailureListener {
-//                Log.e(">>>", "file not exist : ${it.message}")
-
-                val errorCode = (it as StorageException).errorCode
-                if (errorCode == StorageException.ERROR_OBJECT_NOT_FOUND) {
-                    Log.e(">>>", "ERROR_OBJECT_NOT_FOUND")
-                    //TODO Cheryl : better way to get uri ?
-                    if (pic == null) return@addOnFailureListener
-                    val drawable = pic.loadDrawable(this)
-                    val bitmap = drawableToBitmap(drawable) ?: return@addOnFailureListener
-                    val picUri =
-                        getImageUri(this, name ?: "", bitmap) ?: return@addOnFailureListener
-
-                    picRef.putFile(picUri)
-                        .addOnSuccessListener {
-                            picRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                                Log.e(TAG, "File Location: $downloadUri")
-                                val profileImgUrl = downloadUri.toString()
-                                storeUserAndMessage(name, profileImgUrl, content, nowTime)
-                            }
-                        }
-                        .addOnFailureListener {
-                            Log.e(TAG, "upload failed: ${it.message}")
-                        }
-                } else {
-                    Log.e(">>>", "search img file failed : ${it.message}")
-                }
+                Log.e(TAG, "upload user failed")
             }
     }
 
-    private fun storeUserAndMessage(
-        name: String?,
-        picUrl: String?,
-        content: String?,
-        nowTime: String?
-    ) {
+    private fun storeMessage(name: String?, content: String?, nowTime: String?) {
         val msgRef =
             FirebaseDatabase.getInstance().getReference("/message/${System.currentTimeMillis()}")
         val msg = MessageOutput(name, content, nowTime)
         msgRef.setValue(msg)
             .addOnSuccessListener {
-                Log.e(">>>", "upload message succeed")
+                Log.d(TAG, "upload message succeed")
             }
             .addOnFailureListener {
-                Log.e(">>>", "upload message failed")
+                Log.e(TAG, "upload message failed")
             }
 
+    }
 
-        val userRef = FirebaseDatabase.getInstance().getReference("/users/$name")
-        val user = UserOutput(name, picUrl, null)
-        userRef.setValue(user)
-            .addOnSuccessListener {
-                Log.e(">>>", "upload user succeed")
-            }
-            .addOnFailureListener {
-                Log.e(">>>", "upload user failed")
+    private fun isUserExist(name: String): Boolean {
+        var isExist = false
+        val userRef = FirebaseDatabase.getInstance().getReference("/users").child(name)
+        userRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                isExist = snapshot.exists()
             }
 
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "search user if exist error: ${error.message}")
+            }
+
+        })
+        return isExist
     }
 
     private fun drawableToBitmap(drawable: Drawable): Bitmap? {
@@ -241,11 +243,6 @@ class MainActivity : BaseEventBusActivity() {
             Locale.getDefault()
         ).format(System.currentTimeMillis())
         event.apply {
-//            val splitStr = text?.split(" : ")
-//            val name = if (splitStr?.size?:0 > 1) splitStr?.firstOrNull() else title
-//            val content = if (splitStr?.size?:0 > 1) splitStr?.get(1) else text
-//        val iconUri = testUri
-
             storeToFirebase(name, pic, content, nowTime)
             /*
             dataList.add(
