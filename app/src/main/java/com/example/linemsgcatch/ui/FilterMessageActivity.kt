@@ -1,8 +1,8 @@
 package com.example.linemsgcatch.ui
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.linemsgcatch.R
 import com.example.linemsgcatch.data.MessageOutput
@@ -12,9 +12,8 @@ import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
 import com.xwray.groupie.Item
 import kotlinx.android.synthetic.main.activity_filter_message.*
-import kotlinx.android.synthetic.main.activity_filter_message.rv
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_filter_msg_list_rv.view.*
+
 
 class FilterMessageActivity : AppCompatActivity() {
 
@@ -33,21 +32,19 @@ class FilterMessageActivity : AppCompatActivity() {
     }
 
     private fun searchInDb() {
-        val db = FirebaseDatabase.getInstance().reference.child("message")
-        db.orderByChild("name").equalTo(userName)
-            .addValueEventListener(object : ValueEventListener {
+        val db = FirebaseDatabase.getInstance().reference
+            .child("message")
+            .orderByChild("name")
+            .equalTo(userName)
+        db.addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    Log.e(">>>", snapshot.childrenCount.toString())
-                    Log.e(">>>", snapshot.toString())
-
-//                    val value = snapshot.value as MessageOutput
-//                    Log.e(">>>", value.content.toString())
-
-                    val msg = snapshot.getValue(MessageOutput::class.java)
-//                    Log.e(">>>", msg?.content.toString())
-                    if (msg?.content != null) {
-                        mRVAdapter.add(FilterMsgItem(msg))
+                    snapshot.children.forEach {
+                        val msg = it.getValue(MessageOutput::class.java)
+                        if (msg?.content != null) {
+                            mRVAdapter.add(FilterMsgItem(msg))
+                        }
                     }
+                    scrollToBottom()
                 }
                 override fun onCancelled(error: DatabaseError) {
 
