@@ -22,6 +22,7 @@ import com.example.linemsgcatch.data.MessageOutput
 import com.example.linemsgcatch.data.UserOutput
 import com.example.linemsgcatch.service.MainService
 import com.example.linemsgcatch.tool.GetNotificationEvent
+import com.example.linemsgcatch.tool.nowTimeFormatter
 import com.google.firebase.database.*
 import com.google.firebase.storage.FirebaseStorage
 import com.xwray.groupie.GroupAdapter
@@ -39,6 +40,7 @@ class MainActivity : BaseEventBusActivity() {
 
     companion object {
         const val TAG = "MainActivity"
+        const val USER_NAME = ""
     }
 
 //    private val mRVAdapter = RVAdapter()
@@ -82,8 +84,12 @@ class MainActivity : BaseEventBusActivity() {
             this.layoutManager = linearLayoutManager
         }
 
-//        mRVAdapter.setData(dataList)
-        rv.scrollToPosition(dataList.size - 1)
+        mRVAdapter.setOnItemClickListener { item, view ->
+            val intent = Intent(this, FilterMessageActivity::class.java)
+            val item = item as MsgItem
+            intent.putExtra(USER_NAME, item.msgItem.name)
+            startActivity(intent)
+        }
     }
 
     private fun listenForMessage() {
@@ -250,7 +256,7 @@ class MainActivity : BaseEventBusActivity() {
 
     private fun getImageUri(inContext: Context, title: String, inImage: Bitmap): Uri? {
         val bytes = ByteArrayOutputStream()
-        inImage.compress(Bitmap.CompressFormat.PNG, 30, bytes)
+        inImage.compress(Bitmap.CompressFormat.JPEG, 30, bytes)
         val path = MediaStore.Images.Media.insertImage(
             inContext.contentResolver,
             inImage,
@@ -268,18 +274,13 @@ class MainActivity : BaseEventBusActivity() {
 
         event.apply {
             storeToFirebase(name, pic, content, System.currentTimeMillis())
-//            mRVAdapter.addData(dataList.last())
-//            rv.scrollToPosition(dataList.size - 1)
         }
     }
 
 //--------- rv adapter ---------
 
-    class MsgItem(private val msgItem: MessageOutput) : Item<GroupieViewHolder>() {
+    class MsgItem(val msgItem: MessageOutput) : Item<GroupieViewHolder>() {
 
-        private fun nowTimeFormatter(time: Long?): String {
-            return SimpleDateFormat("MM/dd hh:mm:ss", Locale.getDefault()).format(time)
-        }
 
         override fun getLayout(): Int {
             return R.layout.content_msg_list_rv
