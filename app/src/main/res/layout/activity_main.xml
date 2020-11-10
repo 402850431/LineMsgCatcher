@@ -29,4 +29,13 @@
         android:padding="16dp"
         />
 
+    <ImageView
+        android:id="@+id/test_img"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@android:drawable/sym_def_app_icon"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/rv" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

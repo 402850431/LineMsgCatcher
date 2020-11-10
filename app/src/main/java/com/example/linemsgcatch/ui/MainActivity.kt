@@ -1,6 +1,7 @@
 package com.example.linemsgcatch.ui
 
 import android.app.AlertDialog
+import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -13,6 +14,8 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.view.Menu
+import android.widget.SearchView
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationManagerCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -22,6 +25,7 @@ import com.example.linemsgcatch.data.MessageOutput
 import com.example.linemsgcatch.data.UserOutput
 import com.example.linemsgcatch.service.MainService
 import com.example.linemsgcatch.tool.GetNotificationEvent
+import com.example.linemsgcatch.tool.nowDateFormatter
 import com.example.linemsgcatch.tool.nowTimeFormatter
 import com.google.firebase.database.*
 import com.google.firebase.storage.FirebaseStorage
@@ -53,10 +57,60 @@ class MainActivity : BaseEventBusActivity() {
         setContentView(R.layout.activity_main)
 
         getPermission()
+        setUpToolbar()
         initRv()
         listenForMessage()
         initCbListener()
         startService(Intent(this, MainService::class.java))
+//        handleIntent(intent)
+    }
+
+//    override fun onNewIntent(intent: Intent) {
+//        handleIntent(intent)
+//    }
+
+    private fun handleIntent(intent: Intent) {
+        if (Intent.ACTION_SEARCH == intent.action) {
+            val query = intent.getStringExtra(SearchManager.QUERY)
+            //use the query to search your data somehow
+            Log.e(">>>", "query = $query")
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.options_menu, menu)
+
+        // Associate searchable configuration with the SearchView
+        val searchManager = getSystemService(Context.SEARCH_SERVICE) as SearchManager
+        val searchView = menu?.findItem(R.id.search)?.actionView as SearchView
+        searchView.apply {
+            setSearchableInfo(searchManager.getSearchableInfo(componentName))
+        }
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                Log.e(">>>", "query = ${query.toString()}")
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                return false
+            }
+
+        })
+/*
+        if (Intent.ACTION_SEARCH == intent.action) {
+            val query = intent.getStringExtra(SearchManager.QUERY)
+            //use the query to search your data somehow
+//            Log.e(">>>", "query = $query")
+            Log.e(">>>", "query = ${searchView.query.toString()}")
+        }
+*/
+
+        return true
+    }
+
+    private fun setUpToolbar() {
     }
 
     private fun initCbListener() {
@@ -71,7 +125,9 @@ class MainActivity : BaseEventBusActivity() {
             }
             */
         }
-
+        test_img.setOnClickListener {
+            Log.e(">>>", "test_img.isSelected = ${test_img.isSelected}")
+        }
 
     }
 
@@ -82,7 +138,7 @@ class MainActivity : BaseEventBusActivity() {
                 LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
             linearLayoutManager.reverseLayout
             this.layoutManager = linearLayoutManager
-        }
+          }
 
         mRVAdapter.setOnItemClickListener { item, view ->
             val intent = Intent(this, FilterMessageActivity::class.java)
@@ -93,7 +149,8 @@ class MainActivity : BaseEventBusActivity() {
     }
 
     private fun listenForMessage() {
-        val ref = FirebaseDatabase.getInstance().getReference("/message")
+        val date = nowDateFormatter(System.currentTimeMillis())
+        val ref = FirebaseDatabase.getInstance().getReference("/message/$date")
         ref.addChildEventListener(object : ChildEventListener {
 
             /*
@@ -198,7 +255,8 @@ class MainActivity : BaseEventBusActivity() {
     }
 
     private fun storeMessage(name: String?, content: String?, nowTime: Long?) {
-        val msgRef = FirebaseDatabase.getInstance().getReference("/message").push()
+        val date = nowDateFormatter(System.currentTimeMillis())
+        val msgRef = FirebaseDatabase.getInstance().getReference("/message/$date").push() //format = 2020/11/09
         val msg = MessageOutput(name, content, nowTime)
         msgRef.setValue(msg)
             .addOnSuccessListener {
