@@ -10,49 +10,54 @@
     tools:context="com.example.linemsgcatch.ui.MainActivity"
     tools:layout_gravity="center">
 
-    <androidx.cardview.widget.CardView
-        android:id="@+id/card_view"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_centerHorizontal="true"
-        android:elevation="12dp"
-        android:innerRadius="0dp"
-        android:shape="ring"
-        android:thicknessRatio="1.9"
-        app:cardCornerRadius="40dp"
-        app:layout_constraintBottom_toBottomOf="@+id/tv_name"
+    <LinearLayout
+        android:id="@+id/ll_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/tv_name">
-
-        <ImageView
-            android:id="@+id/img_icon"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        >
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_view"
             android:layout_width="30dp"
             android:layout_height="30dp"
-            android:src="@mipmap/ic_launcher" />
-    </androidx.cardview.widget.CardView>
+            android:elevation="12dp"
+            android:innerRadius="0dp"
+            android:shape="ring"
+            android:thicknessRatio="1.9"
+            app:cardCornerRadius="40dp">
 
-    <TextView
-        android:id="@+id/tv_name"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="4dp"
-        android:padding="4dp"
-        android:text="name"
-        app:layout_constraintBottom_toTopOf="@id/linear_layout"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/card_view"
-        app:layout_constraintTop_toTopOf="parent" />
+            <ImageView
+                android:id="@+id/img_icon"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@mipmap/ic_launcher" />
+        </androidx.cardview.widget.CardView>
+
+        <TextView
+            android:id="@+id/tv_name"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:layout_marginStart="4dp"
+            android:padding="4dp"
+            android:textSize="@dimen/name_text_size"
+            android:text="name" />
+    </LinearLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/linear_layout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="34dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/tv_time"
         app:layout_constraintHorizontal_bias="0"
         app:layout_constraintHorizontal_chainStyle="spread"
-        app:layout_constraintStart_toStartOf="@id/tv_name"
-        app:layout_constraintTop_toBottomOf="@id/tv_name">
+        app:layout_constraintStart_toStartOf="@id/ll_title"
+        app:layout_constraintTop_toBottomOf="@id/ll_title">
 
         <View
             android:layout_width="0dp"
@@ -72,6 +77,7 @@
             android:paddingBottom="12dp"
             android:paddingEnd="12dp"
             android:autoLink="web|phone"
+            android:textSize="@dimen/message_text_size"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -86,10 +92,11 @@
         android:layout_height="wrap_content"
         android:padding="4dp"
         android:text="10/20 21:00"
+        android:textSize="@dimen/time_text_size"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1"
         app:layout_constraintStart_toEndOf="@+id/linear_layout"
-        app:layout_constraintTop_toBottomOf="@id/tv_name"
+        app:layout_constraintTop_toTopOf="@+id/linear_layout"
         app:layout_constraintVertical_bias="1.0" />
 </androidx.constraintlayout.widget.ConstraintLayout>

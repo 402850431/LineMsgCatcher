@@ -4,38 +4,46 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/gray"
     tools:context="com.example.linemsgcatch.ui.MainActivity"
     android:orientation="vertical">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/cb_important"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+    <include
+        android:id="@+id/layout_search_view"
+        layout="@layout/content_search_view"
         app:layout_constraintTop_toTopOf="parent"
-        tools:itemCount="5"
-        tools:listitem="@layout/content_msg_list_rv" />
-
-    <CheckBox
-        android:id="@+id/cb_important"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="重要"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:padding="16dp"
         />
 
-    <ImageView
-        android:id="@+id/test_img"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@android:drawable/sym_def_app_icon"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+
+        android:background="@drawable/bg_rounded_rectangle_white"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/rv" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/layout_search_view"
+        android:clipToPadding="false"
+        tools:itemCount="15"
+        tools:listitem="@layout/content_msg_list_rv" />
+
+    <ImageView
+        android:id="@+id/img_scroll_to_bottom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_rounded_rectangle_black30"
+        android:padding="8dp"
+        android:src="@drawable/ic_arrow_drop_down_black_24dp"
+        android:tint="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="@+id/rv"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

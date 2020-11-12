@@ -5,7 +5,9 @@
     <item android:id="@+id/search"
         android:title="@string/search_title"
         android:icon="@android:drawable/ic_menu_search"
-        app:showAsAction="collapseActionView|ifRoom"
+        app:showAsAction="always"
+        android:iconifiedByDefault="true"
+        android:actionLayout="@layout/content_msg_list_rv"
         app:actionViewClass="android.widget.SearchView" />
 
 </menu>

@@ -1,11 +1,20 @@
 package com.example.linemsgcatch.ui
 
+import android.app.Activity
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.linemsgcatch.R
 import com.example.linemsgcatch.data.MessageOutput
+import com.example.linemsgcatch.tool.dateMinus
+import com.example.linemsgcatch.tool.todayDate
 import com.example.linemsgcatch.tool.nowTimeFormatter
 import com.google.firebase.database.*
 import com.xwray.groupie.GroupAdapter
@@ -17,50 +26,100 @@ import kotlinx.android.synthetic.main.content_filter_msg_list_rv.view.*
 
 class FilterMessageActivity : AppCompatActivity() {
 
+    val dataList = mutableListOf<FilterMsgItem>()
     private val mRVAdapter = GroupAdapter<GroupieViewHolder>()
-    var userName = ""
+    private var userName = ""
+    private var mIsLoadMore = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_filter_message)
 
         userName = intent.getStringExtra(MainActivity.USER_NAME)
-        supportActionBar?.title = userName
+        tv_title_name.text = userName
 
         initRv()
-        searchInDb()
+        searchMessage()
     }
 
-    private fun searchInDb() {
+    private fun searchMessage(date: String? = todayDate) {
+//        val path = FirebaseDatabase.getInstance().reference.child("message/${date}")
+//        val db = path.child("name").equalTo(userName)
+//        db.orderByChild("time")
         val db = FirebaseDatabase.getInstance().reference
-            .child("message")
+            .child("message/${date}")
             .orderByChild("name")
             .equalTo(userName)
+
+        val newList = mutableListOf<FilterMsgItem>()
         db.addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    snapshot.children.forEach {
-                        val msg = it.getValue(MessageOutput::class.java)
-                        if (msg?.content != null) {
-                            mRVAdapter.add(FilterMsgItem(msg))
-                        }
-                    }
-                    scrollToBottom()
+            override fun onDataChange(snapshot: DataSnapshot) {
+                snapshot.children.forEach {
+                    val msg = it.getValue(MessageOutput::class.java)
+//                    Log.e(">>>", "msg = ${msg?.content}")
+//                    newList.add(FilterMsgItem(msg))
+
+                    mRVAdapter.add(FilterMsgItem(msg))
                 }
-                override fun onCancelled(error: DatabaseError) {
+/*
 
+                mRVAdapter.addAll(newList.asReversed())
+
+                if (mIsLoadMore) {
+                    val linearLayoutManager = LinearLayoutManager(
+                        this@FilterMessageActivity.baseContext,
+                        LinearLayoutManager.VERTICAL,
+                        false
+                    )
+//                    linearLayoutManager.reverseLayout
+//                    linearLayoutManager.stackFromEnd
+                    rv.layoutManager = linearLayoutManager
                 }
+*/
 
+                if (!mIsLoadMore) scrollToBottom()
 
-            })
+                mIsLoadMore = newList.isNotEmpty()
+                Log.e(">>>", "mIsLoadMore = $mIsLoadMore")
+            }
+            override fun onCancelled(error: DatabaseError) {
+
+            }
+        })
+
     }
 
+    private var nextPage = 0
     private fun initRv() {
         rv.apply {
             this.adapter = mRVAdapter
             val linearLayoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-            linearLayoutManager.reverseLayout
+//            linearLayoutManager.reverseLayout
+//            linearLayoutManager.stackFromEnd
             this.layoutManager = linearLayoutManager
         }
+
+        rv.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+
+                //滑至頂埔
+                if (!rv.canScrollVertically(-1)) {
+//                    Log.e(">>>", "onScrollStateChanged")
+                }
+            }
+
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+
+                //滑至頂埔
+                if (!rv.canScrollVertically(-1)) {
+                    nextPage += 1
+                    Log.e(">>>", "onScrolled, nextPage = $nextPage")
+                    searchMessage(dateMinus(nextPage))
+                }
+            }
+        })
 
     }
 
@@ -68,6 +127,10 @@ class FilterMessageActivity : AppCompatActivity() {
 
     private fun scrollToBottom() {
         rv.scrollToPosition(mRVAdapter.itemCount - 1)
+    }
+
+    private fun scrollToTop() {
+        rv.scrollToPosition(0)
     }
 
     private fun listenForMessage() {
@@ -114,21 +177,63 @@ class FilterMessageActivity : AppCompatActivity() {
 
 }
 
-class FilterMsgItem(private val msg: MessageOutput) : Item<GroupieViewHolder>() {
+class FilterMsgItem(private val msg: MessageOutput?) : Item<GroupieViewHolder>() {
     override fun getLayout(): Int {
         return R.layout.content_filter_msg_list_rv
     }
 
     override fun bind(viewHolder: GroupieViewHolder, position: Int) {
         viewHolder.itemView.apply {
-            tv_msg.text = msg.content
-            tv_time.text = nowTimeFormatter(msg.time)
+            tv_msg.text = msg?.content
+            tv_time.text = nowTimeFormatter(msg?.time)
         }
     }
+
+    fun addData(newList: MutableList<FilterMsgItem?>) {
+
+    }
+
 
 }
 
 
+class RVAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+    private val mDataList: ArrayList<MessageOutput> = ArrayList()
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return  MyViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.content_filter_msg_list_rv, parent, false))
+    }
+
+    override fun getItemCount(): Int = mDataList.size
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val data = mDataList[position]
+        when (holder) {
+            is MyViewHolder -> {
+                holder.itemView.apply {
+                    tv_msg.text = data.content
+                    tv_time.text = nowTimeFormatter(data.time)
+//                        Glide.with(imgIcon.context).load(data.pic).error(android.R.drawable.stat_notify_error).into(imgIcon)
+                }
+            }
+        }
+    }
+    inner class MyViewHolder(view: View) : RecyclerView.ViewHolder(view)
+
+    fun setData(dataList: MutableList<MessageOutput>) {
+        mDataList.clear()
+        mDataList.addAll(dataList)
+        notifyDataSetChanged()
+    }
+
+    fun addData(data: MessageOutput) {
+        mDataList.add(data)
+        notifyItemInserted(mDataList.lastIndex)
+    }
+
+}
 
 
 

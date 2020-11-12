@@ -4,13 +4,43 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/gray"
     tools:context=".ui.FilterMessageActivity">
+
+    <include
+        android:id="@+id/layout_search_view"
+        layout="@layout/content_search_view"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        app:layout_constraintBottom_toTopOf="@+id/tv_title_name"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <TextView
+        android:id="@+id/tv_title_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:text="人名"
+        android:layout_marginStart="8dp"
+        android:layout_marginBottom="8dp"
+        android:textSize="@dimen/title_text_size"
+        app:layout_constraintTop_toBottomOf="@id/layout_search_view"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/rv"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
         tools:itemCount="5"
-        tools:listitem="@layout/content_filter_msg_list_rv"/>
+        android:background="@drawable/bg_rounded_rectangle_white"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        tools:listitem="@layout/content_filter_msg_list_rv"
+        app:layout_constraintTop_toBottomOf="@id/tv_title_name"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

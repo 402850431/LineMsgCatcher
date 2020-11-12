@@ -14,18 +14,20 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
-import android.view.Menu
+import android.view.View
 import android.widget.SearchView
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationManagerCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.linemsgcatch.R
 import com.example.linemsgcatch.data.MessageOutput
 import com.example.linemsgcatch.data.UserOutput
 import com.example.linemsgcatch.service.MainService
 import com.example.linemsgcatch.tool.GetNotificationEvent
-import com.example.linemsgcatch.tool.nowDateFormatter
+import com.example.linemsgcatch.tool.dateMinus
+import com.example.linemsgcatch.tool.todayDate
 import com.example.linemsgcatch.tool.nowTimeFormatter
 import com.google.firebase.database.*
 import com.google.firebase.storage.FirebaseStorage
@@ -34,11 +36,10 @@ import com.xwray.groupie.GroupieViewHolder
 import com.xwray.groupie.Item
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_msg_list_rv.view.*
+import kotlinx.android.synthetic.main.content_search_view.*
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import java.io.ByteArrayOutputStream
-import java.text.SimpleDateFormat
-import java.util.*
 
 class MainActivity : BaseEventBusActivity() {
 
@@ -48,48 +49,25 @@ class MainActivity : BaseEventBusActivity() {
     }
 
 //    private val mRVAdapter = RVAdapter()
-
     private val mRVAdapter = GroupAdapter<GroupieViewHolder>()
     private var dataList: MutableList<MessageOutput> = mutableListOf()
+    private var nextPage = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         getPermission()
-        setUpToolbar()
+        setUpSearchView()
         initRv()
         listenForMessage()
-        initCbListener()
+        initOnclick()
         startService(Intent(this, MainService::class.java))
-//        handleIntent(intent)
     }
 
-//    override fun onNewIntent(intent: Intent) {
-//        handleIntent(intent)
-//    }
-
-    private fun handleIntent(intent: Intent) {
-        if (Intent.ACTION_SEARCH == intent.action) {
-            val query = intent.getStringExtra(SearchManager.QUERY)
-            //use the query to search your data somehow
-            Log.e(">>>", "query = $query")
-        }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.options_menu, menu)
-
-        // Associate searchable configuration with the SearchView
-        val searchManager = getSystemService(Context.SEARCH_SERVICE) as SearchManager
-        val searchView = menu?.findItem(R.id.search)?.actionView as SearchView
-        searchView.apply {
-            setSearchableInfo(searchManager.getSearchableInfo(componentName))
-        }
-
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+    private fun setUpSearchView() {
+        search_view.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                Log.e(">>>", "query = ${query.toString()}")
                 return false
             }
 
@@ -98,24 +76,11 @@ class MainActivity : BaseEventBusActivity() {
             }
 
         })
-/*
-        if (Intent.ACTION_SEARCH == intent.action) {
-            val query = intent.getStringExtra(SearchManager.QUERY)
-            //use the query to search your data somehow
-//            Log.e(">>>", "query = $query")
-            Log.e(">>>", "query = ${searchView.query.toString()}")
-        }
-*/
-
-        return true
     }
 
-    private fun setUpToolbar() {
-    }
-
-    private fun initCbListener() {
+    private fun initOnclick() {
+        /*
         cb_important.setOnCheckedChangeListener { buttonView, isChecked ->
-            /*
             if (isChecked) {
                 val filterDataList =
                     dataList.filter { it.name?.contains("(重要)") == true } as MutableList<MessageOutput>
@@ -123,10 +88,12 @@ class MainActivity : BaseEventBusActivity() {
             } else {
                 mRVAdapter.setData(dataList)
             }
-            */
         }
-        test_img.setOnClickListener {
-            Log.e(">>>", "test_img.isSelected = ${test_img.isSelected}")
+*/
+        img_scroll_to_bottom.setOnClickListener {
+            Log.e(">>>", "${dateMinus(nextPage + 1)}")
+
+            scrollToBottom()
         }
 
     }
@@ -140,16 +107,39 @@ class MainActivity : BaseEventBusActivity() {
             this.layoutManager = linearLayoutManager
           }
 
+        rv.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, newState: Int, dy: Int) { //onScrolled() prevents the detection happening twice.
+                super.onScrollStateChanged(recyclerView, newState)
+
+                //滑至底部
+                if (!rv.canScrollVertically(1)) { //direction integers: -1 for up, 1 for down, 0 will always return false
+                    img_scroll_to_bottom.visibility = View.GONE
+                } else {
+                    img_scroll_to_bottom.visibility = View.VISIBLE
+                }
+
+                //滑至頂埔
+                if (!rv.canScrollVertically(-1)) {
+                    Log.e(">>>", "${dateMinus(nextPage + 1)}")
+                    nextPage += 1
+                    listenForMessage(dateMinus(nextPage))
+                }
+
+            }
+        })
+
         mRVAdapter.setOnItemClickListener { item, view ->
             val intent = Intent(this, FilterMessageActivity::class.java)
             val item = item as MsgItem
             intent.putExtra(USER_NAME, item.msgItem.name)
             startActivity(intent)
         }
+
     }
 
-    private fun listenForMessage() {
-        val date = nowDateFormatter(System.currentTimeMillis())
+    private fun listenForMessage(date: String? = todayDate, isScrollToBottom: Boolean = true) {
+//        val date = nowDateFormatter(System.currentTimeMillis())
+        Log.e(">>>", "date = $todayDate")
         val ref = FirebaseDatabase.getInstance().getReference("/message/$date")
         ref.addChildEventListener(object : ChildEventListener {
 
@@ -177,7 +167,7 @@ class MainActivity : BaseEventBusActivity() {
                 val message = snapshot.getValue(MessageOutput::class.java)
                 if (message != null) {
                     mRVAdapter.add(MsgItem(message))
-                    scrollToBottom()
+                    if (isScrollToBottom) scrollToBottom()
                 }
             }
 
@@ -255,8 +245,8 @@ class MainActivity : BaseEventBusActivity() {
     }
 
     private fun storeMessage(name: String?, content: String?, nowTime: Long?) {
-        val date = nowDateFormatter(System.currentTimeMillis())
-        val msgRef = FirebaseDatabase.getInstance().getReference("/message/$date").push() //format = 2020/11/09
+//        val date = nowDateFormatter(System.currentTimeMillis())
+        val msgRef = FirebaseDatabase.getInstance().getReference("/message/$todayDate").push() //format = 2020/11/09
         val msg = MessageOutput(name, content, nowTime)
         msgRef.setValue(msg)
             .addOnSuccessListener {

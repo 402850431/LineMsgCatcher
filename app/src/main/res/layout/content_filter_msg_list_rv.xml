@@ -14,6 +14,7 @@
         android:id="@+id/linear_layout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/tv_time"
         app:layout_constraintHorizontal_bias="0"
@@ -39,6 +40,7 @@
             android:paddingTop="12dp"
             android:paddingBottom="12dp"
             android:paddingEnd="12dp"
+            android:textSize="@dimen/message_text_size"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -51,8 +53,9 @@
         android:id="@+id/tv_time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="4dp"
         android:text="10/20 21:00"
+        android:textSize="@dimen/time_text_size"
+
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
