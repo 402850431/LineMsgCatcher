@@ -2,4 +2,6 @@
     <string name="app_name">A群分析</string>
     <string name="search_title">搜尋</string>
     <string name="search_hint">訊息、股票</string>
+    <string name="btn_cancel">取消</string>
+    <string name="btn_confirm">確定</string>
 </resources>

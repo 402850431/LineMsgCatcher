@@ -1,7 +1,6 @@
 package com.example.linemsgcatch.ui
 
 import android.app.AlertDialog
-import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -25,10 +24,7 @@ import com.example.linemsgcatch.R
 import com.example.linemsgcatch.data.MessageOutput
 import com.example.linemsgcatch.data.UserOutput
 import com.example.linemsgcatch.service.MainService
-import com.example.linemsgcatch.tool.GetNotificationEvent
-import com.example.linemsgcatch.tool.dateMinus
-import com.example.linemsgcatch.tool.todayDate
-import com.example.linemsgcatch.tool.nowTimeFormatter
+import com.example.linemsgcatch.tool.*
 import com.google.firebase.database.*
 import com.google.firebase.storage.FirebaseStorage
 import com.xwray.groupie.GroupAdapter
@@ -52,6 +48,7 @@ class MainActivity : BaseEventBusActivity() {
     private val mRVAdapter = GroupAdapter<GroupieViewHolder>()
     private var dataList: MutableList<MessageOutput> = mutableListOf()
     private var nextPage = 0
+    private var mIsLoadMore = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,6 +65,8 @@ class MainActivity : BaseEventBusActivity() {
     private fun setUpSearchView() {
         search_view.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
+                Log.e(">>>", "query = ${query.toString()}")
+                searchMessage(todayDate, query.toString())
                 return false
             }
 
@@ -76,6 +75,71 @@ class MainActivity : BaseEventBusActivity() {
             }
 
         })
+
+        search_view.setOnQueryTextFocusChangeListener { v, hasFocus ->
+            Log.e(">>>", "hasFocus = $hasFocus")
+//            if (!hasFocus)
+//                searchMessage(todayDate, "")
+        }
+
+        search_view.setOnCloseListener {
+            Log.e(">>>", "onCloseListener")
+            false
+        }
+
+    }
+
+    override fun onBackPressed() {
+        if (search_view.hasFocus()) {
+            search_view.setQuery("", true)
+            searchMessage(todayDate, "")
+            search_view.clearFocus()
+
+        } else {
+            showDialog(this, View.OnClickListener {
+                super.onBackPressed()
+            })
+        }
+
+    }
+
+    private fun searchMessage(date: String? = todayDate, queryStr: String) {
+
+        mRVAdapter.clear()
+
+        val db = FirebaseDatabase.getInstance().reference
+            .child("message/${date}")
+            .orderByChild("time")
+
+        db.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+
+                val dataCount = snapshot.children.count()
+                if (dataCount > 0 && date != todayDate) mRVAdapter.add(DateMsgItem(date))
+                mIsLoadMore = dataCount > 0
+
+                if (mIsLoadMore) {
+                    snapshot.children.forEach {
+                        val msg = it.getValue(MessageOutput::class.java)
+//                        Log.e(">>>", "msg = ${msg?.content}, ${nowTimeFormatter(msg?.time)}")
+
+                        if (queryStr.isNotEmpty()) {
+                            if (msg?.content?.contains(queryStr) == true) {
+                                mRVAdapter.add(FilterMsgItem(msg))
+                            }
+                        } else {
+                            mRVAdapter.add(FilterMsgItem(msg))
+                        }
+                    }
+
+                    scrollToBottom()
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {
+
+            }
+        })
+
     }
 
     private fun initOnclick() {
@@ -101,9 +165,8 @@ class MainActivity : BaseEventBusActivity() {
     private fun initRv() {
         rv.apply {
             this.adapter = mRVAdapter
-            val linearLayoutManager =
-                LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-            linearLayoutManager.reverseLayout
+            val linearLayoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
+//            linearLayoutManager.reverseLayout
             this.layoutManager = linearLayoutManager
           }
 
@@ -117,6 +180,7 @@ class MainActivity : BaseEventBusActivity() {
                 } else {
                     img_scroll_to_bottom.visibility = View.VISIBLE
                 }
+/*
 
                 //滑至頂埔
                 if (!rv.canScrollVertically(-1)) {
@@ -124,6 +188,7 @@ class MainActivity : BaseEventBusActivity() {
                     nextPage += 1
                     listenForMessage(dateMinus(nextPage))
                 }
+*/
 
             }
         })
@@ -139,7 +204,6 @@ class MainActivity : BaseEventBusActivity() {
 
     private fun listenForMessage(date: String? = todayDate, isScrollToBottom: Boolean = true) {
 //        val date = nowDateFormatter(System.currentTimeMillis())
-        Log.e(">>>", "date = $todayDate")
         val ref = FirebaseDatabase.getInstance().getReference("/message/$date")
         ref.addChildEventListener(object : ChildEventListener {
 

@@ -21,6 +21,7 @@ import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
 import com.xwray.groupie.Item
 import kotlinx.android.synthetic.main.activity_filter_message.*
+import kotlinx.android.synthetic.main.content_filter_date_msg_list_rv.view.*
 import kotlinx.android.synthetic.main.content_filter_msg_list_rv.view.*
 
 
@@ -48,18 +49,27 @@ class FilterMessageActivity : AppCompatActivity() {
 //        db.orderByChild("time")
         val db = FirebaseDatabase.getInstance().reference
             .child("message/${date}")
-            .orderByChild("name")
-            .equalTo(userName)
+//            .orderByChild("name")
+//            .equalTo(userName)
+            .orderByChild("time")
 
-        val newList = mutableListOf<FilterMsgItem>()
         db.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                snapshot.children.forEach {
-                    val msg = it.getValue(MessageOutput::class.java)
-//                    Log.e(">>>", "msg = ${msg?.content}")
-//                    newList.add(FilterMsgItem(msg))
 
-                    mRVAdapter.add(FilterMsgItem(msg))
+                val dataCount = snapshot.children.count()
+                if (dataCount > 0 && date != todayDate) mRVAdapter.add(DateMsgItem(date))
+                mIsLoadMore = dataCount > 0
+
+                if (mIsLoadMore) {
+                    snapshot.children.forEach {
+                        val msg = it.getValue(MessageOutput::class.java)
+                        if (msg?.name == userName) {
+                            Log.e(">>>", "msg = ${msg?.content}, ${nowTimeFormatter(msg?.time)}")
+//                    newList.add(FilterMsgItem(msg))
+                            mRVAdapter.add(FilterMsgItem(msg))
+                        }
+                    }
+
                 }
 /*
 
@@ -77,10 +87,9 @@ class FilterMessageActivity : AppCompatActivity() {
                 }
 */
 
-                if (!mIsLoadMore) scrollToBottom()
+//                if (!mIsLoadMore) scrollToBottom()
 
-                mIsLoadMore = newList.isNotEmpty()
-                Log.e(">>>", "mIsLoadMore = $mIsLoadMore")
+//                Log.e(">>>", "mIsLoadMore = $mIsLoadMore")
             }
             override fun onCancelled(error: DatabaseError) {
 
@@ -91,13 +100,21 @@ class FilterMessageActivity : AppCompatActivity() {
 
     private var nextPage = 0
     private fun initRv() {
+        /*
         rv.apply {
             this.adapter = mRVAdapter
             val linearLayoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-//            linearLayoutManager.reverseLayout
-//            linearLayoutManager.stackFromEnd
+//            linearLayoutManager.reverseLayout = true
+//            linearLayoutManager.stackFromEnd = true
             this.layoutManager = linearLayoutManager
         }
+        */
+
+        rv.adapter = mRVAdapter
+        val linearLayoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+        linearLayoutManager.reverseLayout = true
+//        linearLayoutManager.stackFromEnd = true
+        rv.layoutManager = linearLayoutManager
 
         rv.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
@@ -116,7 +133,8 @@ class FilterMessageActivity : AppCompatActivity() {
                 if (!rv.canScrollVertically(-1)) {
                     nextPage += 1
                     Log.e(">>>", "onScrolled, nextPage = $nextPage")
-                    searchMessage(dateMinus(nextPage))
+                    val previousDate = dateMinus(nextPage)
+                    searchMessage(previousDate)
                 }
             }
         })
@@ -188,11 +206,19 @@ class FilterMsgItem(private val msg: MessageOutput?) : Item<GroupieViewHolder>()
             tv_time.text = nowTimeFormatter(msg?.time)
         }
     }
+}
 
-    fun addData(newList: MutableList<FilterMsgItem?>) {
 
+class DateMsgItem(private val date: String?) : Item<GroupieViewHolder>() {
+    override fun getLayout(): Int {
+        return R.layout.content_filter_date_msg_list_rv
     }
 
+    override fun bind(viewHolder: GroupieViewHolder, position: Int) {
+        viewHolder.itemView.apply {
+            tv_date.text = date
+        }
+    }
 
 }
 

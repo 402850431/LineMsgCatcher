@@ -7,7 +7,8 @@ import java.util.*
 val todayDate = nowDateFormatter(System.currentTimeMillis())
 
 fun nowTimeFormatter(time: Long?): String {
-    return SimpleDateFormat("MM/dd kk:mm:ss", Locale.getDefault()).format(time)
+//    return SimpleDateFormat("MM/dd  a hh:mm", Locale.getDefault()).format(time)
+    return SimpleDateFormat("a hh:mm", Locale.getDefault()).format(time)
 }
 
 fun nowDateFormatter(time: Long?): String {
