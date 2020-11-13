@@ -4,4 +4,7 @@
     <string name="search_hint">訊息、股票</string>
     <string name="btn_cancel">取消</string>
     <string name="btn_confirm">確定</string>
+    <string name="network_timeout">載入超時</string>
+    <string name="server_error">伺服器錯誤</string>
+    <string name="network_io_fail">發生錯誤</string>
 </resources>

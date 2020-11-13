@@ -1,33 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal"
-    android:layout_gravity="top"
-    android:background="@color/gray"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="8dp"
-    >
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_gravity="top"
+    android:background="@color/gray"
+    android:orientation="horizontal"
+    android:padding="8dp">
 
     <SearchView
         android:id="@+id/search_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:theme="@style/AppSearchView"
-        android:queryHint="@string/search_hint"
-        android:closeIcon="@drawable/ic_close_black_24dp"
-        android:searchIcon="@drawable/ic_search_black_24dp"
-        android:queryBackground="@color/transparent"
         android:background="@drawable/bg_rounded_rectangle_white"
-        android:iconifiedByDefault="false"/>
+        android:closeIcon="@drawable/ic_close_black_24dp"
+        android:iconifiedByDefault="false"
+        android:queryBackground="@color/transparent"
+        android:searchIcon="@drawable/ic_search_black_24dp"
+        android:queryHint="@string/search_hint"
+        android:theme="@style/AppSearchView"/>
 <!--
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_rounded_rectangle_white"
+        android:orientation="horizontal"
+        android:padding="8dp">
 
-    <ImageView
-        android:id="@+id/btn_cancel"
-        android:layout_width="30dp"
-        android:layout_height="match_parent"
-        android:src="@drawable/ic_close_black_24dp"
-        android:tint="@android:color/darker_gray"
-        android:textColor="#FFFFFF"/>
--->
+        <ImageView
+            android:id="@+id/img_search"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_search_black_24dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
 
-</LinearLayout>
+        <EditText
+            android:id="@+id/et_search"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/bg_rounded_rectangle_white"
+            android:hint="@string/search_hint"
+            android:theme="@style/AppSearchView"
+            app:layout_constraintStart_toEndOf="@+id/img_search"
+            app:layout_constraintEnd_toStartOf="@id/img_cancel"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+        <ImageView
+            android:id="@+id/img_cancel"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_close_black_24dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+    -->
+    <!--
+
+        <ImageView
+            android:id="@+id/btn_cancel"
+            android:layout_width="30dp"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_close_black_24dp"
+            android:tint="@android:color/darker_gray"
+            android:textColor="#FFFFFF"/>
+    -->
+
+</FrameLayout>

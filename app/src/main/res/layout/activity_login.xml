@@ -8,7 +8,7 @@
     android:layout_gravity="center"
     android:orientation="vertical"
     android:padding="8dp"
-    tools:context=".ui.LoginActivity">
+    tools:context=".ui.normal.LoginActivity">
 
     <ImageView
         android:id="@+id/img_profile_pic"

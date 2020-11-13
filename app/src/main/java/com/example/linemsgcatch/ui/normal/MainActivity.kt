@@ -1,4 +1,4 @@
-package com.example.linemsgcatch.ui
+package com.example.linemsgcatch.ui.normal
 
 import android.app.AlertDialog
 import android.content.Context
@@ -36,6 +36,7 @@ import kotlinx.android.synthetic.main.content_search_view.*
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import java.io.ByteArrayOutputStream
+import java.lang.Exception
 
 class MainActivity : BaseEventBusActivity() {
 
@@ -75,18 +76,6 @@ class MainActivity : BaseEventBusActivity() {
             }
 
         })
-
-        search_view.setOnQueryTextFocusChangeListener { v, hasFocus ->
-            Log.e(">>>", "hasFocus = $hasFocus")
-//            if (!hasFocus)
-//                searchMessage(todayDate, "")
-        }
-
-        search_view.setOnCloseListener {
-            Log.e(">>>", "onCloseListener")
-            false
-        }
-
     }
 
     override fun onBackPressed() {
@@ -107,15 +96,19 @@ class MainActivity : BaseEventBusActivity() {
 
         mRVAdapter.clear()
 
-        val db = FirebaseDatabase.getInstance().reference
+        val query = FirebaseDatabase.getInstance().reference
             .child("message/${date}")
             .orderByChild("time")
 
-        db.addValueEventListener(object : ValueEventListener {
+        query.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
 
                 val dataCount = snapshot.children.count()
-                if (dataCount > 0 && date != todayDate) mRVAdapter.add(DateMsgItem(date))
+                if (dataCount > 0 && date != todayDate) mRVAdapter.add(
+                    DateMsgItem(
+                        date
+                    )
+                )
                 mIsLoadMore = dataCount > 0
 
                 if (mIsLoadMore) {
@@ -124,11 +117,19 @@ class MainActivity : BaseEventBusActivity() {
 //                        Log.e(">>>", "msg = ${msg?.content}, ${nowTimeFormatter(msg?.time)}")
 
                         if (queryStr.isNotEmpty()) {
-                            if (msg?.content?.contains(queryStr) == true) {
-                                mRVAdapter.add(FilterMsgItem(msg))
+                            if (msg?.content?.contains(queryStr) == true || msg?.name?.contains(queryStr) == true) {
+                                mRVAdapter.add(
+                                    MsgItem(
+                                        msg
+                                    )
+                                )
                             }
                         } else {
-                            mRVAdapter.add(FilterMsgItem(msg))
+                            if (msg != null) mRVAdapter.add(
+                                MsgItem(
+                                    msg
+                                )
+                            )
                         }
                     }
 
@@ -139,6 +140,7 @@ class MainActivity : BaseEventBusActivity() {
 
             }
         })
+
 
     }
 
@@ -154,6 +156,10 @@ class MainActivity : BaseEventBusActivity() {
             }
         }
 */
+        test_chart.setOnClickListener {
+            startActivity(Intent(this@MainActivity, ChartActivity::class.java))
+        }
+
         img_scroll_to_bottom.setOnClickListener {
             Log.e(">>>", "${dateMinus(nextPage + 1)}")
 
@@ -194,10 +200,16 @@ class MainActivity : BaseEventBusActivity() {
         })
 
         mRVAdapter.setOnItemClickListener { item, view ->
-            val intent = Intent(this, FilterMessageActivity::class.java)
-            val item = item as MsgItem
-            intent.putExtra(USER_NAME, item.msgItem.name)
-            startActivity(intent)
+            try {
+                view.img_icon.setOnClickListener {
+                    val intent = Intent(this, FilterMessageActivity::class.java)
+                    val item = item as MsgItem
+                    intent.putExtra(USER_NAME, item.msgItem.name)
+                    startActivity(intent)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, e.toString())
+            }
         }
 
     }
@@ -230,7 +242,11 @@ class MainActivity : BaseEventBusActivity() {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                 val message = snapshot.getValue(MessageOutput::class.java)
                 if (message != null) {
-                    mRVAdapter.add(MsgItem(message))
+                    mRVAdapter.add(
+                        MsgItem(
+                            message
+                        )
+                    )
                     if (isScrollToBottom) scrollToBottom()
                 }
             }

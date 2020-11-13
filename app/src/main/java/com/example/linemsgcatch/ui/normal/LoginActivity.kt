@@ -1,4 +1,4 @@
-package com.example.linemsgcatch.ui
+package com.example.linemsgcatch.ui.normal
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity

@@ -1,4 +1,4 @@
-package com.example.linemsgcatch.ui
+package com.example.linemsgcatch.ui.normal
 
 import android.app.Activity
 import android.os.Bundle

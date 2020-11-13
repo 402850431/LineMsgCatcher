@@ -1,6 +1,5 @@
-package com.example.linemsgcatch.ui
+package com.example.linemsgcatch.ui.normal
 
-import android.app.Activity
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -57,7 +56,11 @@ class FilterMessageActivity : AppCompatActivity() {
             override fun onDataChange(snapshot: DataSnapshot) {
 
                 val dataCount = snapshot.children.count()
-                if (dataCount > 0 && date != todayDate) mRVAdapter.add(DateMsgItem(date))
+                if (dataCount > 0 && date != todayDate) mRVAdapter.add(
+                    DateMsgItem(
+                        date
+                    )
+                )
                 mIsLoadMore = dataCount > 0
 
                 if (mIsLoadMore) {
@@ -66,7 +69,11 @@ class FilterMessageActivity : AppCompatActivity() {
                         if (msg?.name == userName) {
                             Log.e(">>>", "msg = ${msg?.content}, ${nowTimeFormatter(msg?.time)}")
 //                    newList.add(FilterMsgItem(msg))
-                            mRVAdapter.add(FilterMsgItem(msg))
+                            mRVAdapter.add(
+                                FilterMsgItem(
+                                    msg
+                                )
+                            )
                         }
                     }
 

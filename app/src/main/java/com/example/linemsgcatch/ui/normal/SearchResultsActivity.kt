@@ -1,4 +1,4 @@
-package com.example.linemsgcatch
+package com.example.linemsgcatch.ui.normal
 
 import android.app.Activity
 import android.app.SearchManager
