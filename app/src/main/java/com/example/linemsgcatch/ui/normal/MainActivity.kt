@@ -11,6 +11,7 @@ import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
@@ -23,14 +24,23 @@ import com.bumptech.glide.Glide
 import com.example.linemsgcatch.R
 import com.example.linemsgcatch.data.MessageOutput
 import com.example.linemsgcatch.data.UserOutput
+import com.example.linemsgcatch.remote.BasicWebApi
+import com.example.linemsgcatch.remote.api.StockApi
+import com.example.linemsgcatch.remote.output.ChartOutput
+import com.example.linemsgcatch.remote.output.ErrorOutput
 import com.example.linemsgcatch.service.MainService
 import com.example.linemsgcatch.tool.*
+import com.example.linemsgcatch.ui.kline.KData
+import com.example.linemsgcatch.ui.kline.KLineView
 import com.google.firebase.database.*
 import com.google.firebase.storage.FirebaseStorage
+import com.google.gson.Gson
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
 import com.xwray.groupie.Item
+import kotlinx.android.synthetic.main.activity_chart.*
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.content_msg_chart_list_rv.view.*
 import kotlinx.android.synthetic.main.content_msg_list_rv.view.*
 import kotlinx.android.synthetic.main.content_search_view.*
 import org.greenrobot.eventbus.Subscribe
@@ -85,7 +95,7 @@ class MainActivity : BaseEventBusActivity() {
             search_view.clearFocus()
 
         } else {
-            showDialog(this, View.OnClickListener {
+            showDialog(this, null, "要離開app嗎?", View.OnClickListener {
                 super.onBackPressed()
             })
         }
@@ -114,22 +124,15 @@ class MainActivity : BaseEventBusActivity() {
                 if (mIsLoadMore) {
                     snapshot.children.forEach {
                         val msg = it.getValue(MessageOutput::class.java)
-//                        Log.e(">>>", "msg = ${msg?.content}, ${nowTimeFormatter(msg?.time)}")
+                        Log.e(">>>", "msg = ${msg?.content}, ${nowTimeFormatter(msg?.time)}")
 
                         if (queryStr.isNotEmpty()) {
                             if (msg?.content?.contains(queryStr) == true || msg?.name?.contains(queryStr) == true) {
-                                mRVAdapter.add(
-                                    MsgItem(
-                                        msg
-                                    )
+                                mRVAdapter.add(MsgItem(msg)
                                 )
                             }
                         } else {
-                            if (msg != null) mRVAdapter.add(
-                                MsgItem(
-                                    msg
-                                )
-                            )
+                            if (msg != null) mRVAdapter.add(MsgItem(msg))
                         }
                     }
 
@@ -216,6 +219,7 @@ class MainActivity : BaseEventBusActivity() {
 
     private fun listenForMessage(date: String? = todayDate, isScrollToBottom: Boolean = true) {
 //        val date = nowDateFormatter(System.currentTimeMillis())
+        Log.e(">>>", "listenForMessage")
         val ref = FirebaseDatabase.getInstance().getReference("/message/$date")
         ref.addChildEventListener(object : ChildEventListener {
 
@@ -242,11 +246,22 @@ class MainActivity : BaseEventBusActivity() {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                 val message = snapshot.getValue(MessageOutput::class.java)
                 if (message != null) {
-                    mRVAdapter.add(
-                        MsgItem(
-                            message
-                        )
-                    )
+//                    Log.e(">>>", "message = ${message.content}")
+                    val content = message.content
+                    if (content?.startsWith("P", 0) == true
+                        && content.length == 5) {
+                        val symbolId = content.substring(1, 5).toIntOrNull()
+
+                        if (symbolId != null) {
+                            mRVAdapter.add(MsgItem(message))
+                            mRVAdapter.add(ChartItem(symbolId))
+                        }
+                        else {
+                            mRVAdapter.add(MsgItem(message))
+                        }
+                    } else {
+                        mRVAdapter.add(MsgItem(message))
+                    }
                     if (isScrollToBottom) scrollToBottom()
                 }
             }
@@ -320,7 +335,7 @@ class MainActivity : BaseEventBusActivity() {
                 Log.d(TAG, "upload user succeed")
             }
             .addOnFailureListener {
-                Log.e(TAG, "upload user failed")
+                Log.e(TAG, "upload user failed: ${it.message}")
             }
     }
 
@@ -333,7 +348,7 @@ class MainActivity : BaseEventBusActivity() {
                 Log.d(TAG, "upload message succeed")
             }
             .addOnFailureListener {
-                Log.e(TAG, "upload message failed")
+                Log.e(TAG, "upload message failed: ${it.message}")
             }
     }
 
@@ -409,7 +424,6 @@ class MainActivity : BaseEventBusActivity() {
 
     class MsgItem(val msgItem: MessageOutput) : Item<GroupieViewHolder>() {
 
-
         override fun getLayout(): Int {
             return R.layout.content_msg_list_rv
         }
@@ -422,11 +436,86 @@ class MainActivity : BaseEventBusActivity() {
                 tv_time.text = nowTimeFormatter(msgItem.time)
                 val imgRef = FirebaseStorage.getInstance().getReference("/images/${msgItem.name}")
                 imgRef.downloadUrl.addOnSuccessListener {
-                    Glide.with(this).load(it.toString()).error(android.R.drawable.stat_notify_error)
-                        .into(img_icon)
+                    Glide.with(this).load(it.toString()).error(android.R.drawable.stat_notify_error).into(img_icon)
                 }
             }
 
+        }
+
+    }
+
+    class ChartItem(private val symbolId: Int) : Item<GroupieViewHolder>() {
+
+        private val stockApi = StockApi()
+
+        private var mHandler: Handler? = null
+        private var dataListAddRunnable: Runnable? = null
+        private var singleDataAddRunnable: Runnable? = null
+
+        override fun getLayout(): Int {
+            return R.layout.content_msg_chart_list_rv
+        }
+
+        @RequiresApi(Build.VERSION_CODES.M)
+        override fun bind(viewHolder: GroupieViewHolder, position: Int) {
+            viewHolder.itemView.apply {
+                stockApi.getChart(symbolId, object : BasicWebApi.ResultListener {
+                    override fun onResult(response: String?) {
+                        val chatOutput = Gson().fromJson(response, ChartOutput::class.java)
+                        initData(klv, chatOutput?.data?.chart)
+                    }
+
+                    override fun onError(errorOutput: ErrorOutput?) {
+                        klv.visibility = View.GONE
+                        tv_no_data.text = "資料不存在: ${errorOutput?.error?.message}"
+                    }
+
+                })
+            }
+
+        }
+
+        private fun initData(klv: KLineView?, chart: Map<String, ChartOutput.ChartObject>?) {
+            //初始化控件加载数据，仅限于首次初始化赋值，不可用于更新数据
+            klv?.initKDataList(getKDataListTest(10.0, chart))
+
+            //设置十字线移动模式，默认为0：固定指向收盘价
+            klv?.setCrossHairMoveMode(KLineView.CROSS_HAIR_MOVE_OPEN)
+
+            mHandler = Handler()
+            dataListAddRunnable = Runnable {
+                //分页加载时添加多条数据
+                klv?.addPreDataList(getKDataListTest(10.0, chart), true)
+                //klv_main.addPreDataList(null, true);
+            }
+
+            singleDataAddRunnable = Runnable {
+                //实时刷新时添加单条数据
+                klv?.addSingleData(getKDataListTest(0.1, chart)?.get(0))
+            }
+//        mHandler.postDelayed(singleDataAddRunnable, 2000);
+
+            //当控件显示数据属于总数据量的前三分之一时，会自动调用该接口，用于预加载数据，保证控件操作过程中的流畅性，
+            //虽然做了预加载，当总数据量较小时，也会出现用户滑到左边界了，但数据还未获取到，依然会有停顿。
+            //所以数据量越大，越不会出现停顿，也就越流畅
+            klv?.setOnRequestDataListListener { //延时3秒执行，模拟网络请求耗时
+                mHandler!!.postDelayed(dataListAddRunnable, 3000)
+            }
+        }
+
+        private fun getKDataListTest(num: Double, chartMap: Map<String, ChartOutput.ChartObject>?): List<KData>? {
+            val dataList = mutableListOf<KData>()
+            chartMap?.forEach {
+//            val keyTime = apiTimeToMyTimeFormat(it.key)
+                val keyTime = apiTimeToTimeMillis(it.key)
+                val value = it.value
+                dataList.add(
+                    KData(keyTime, value.open?:0.0,
+                    value.high?:0.0, value.low?:0.0, value.close?:0.0, value.volume?:0.0)
+                )
+            }
+
+            return dataList
         }
 
     }

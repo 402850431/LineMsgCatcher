@@ -540,7 +540,7 @@ public class KLineView extends View implements View.OnTouchListener, Handler.Cal
         detailRectWidth = dp2px(103);
         detailRectHeight = dp2px(120);
         detailTextVerticalSpace = (detailRectHeight - dp2px(4)) / 8;
-        detailLeftTitleArr = new String[]{"时间", "开", "高", "低", "收", "涨跌额", "涨跌幅", "成交量"};
+        detailLeftTitleArr = new String[]{"時間", "開", "高", "低", "收", "漲跌額", "漲跌幅", "成交量"};
         initQuotaThread();
         initStopDelay();
 

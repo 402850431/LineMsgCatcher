@@ -33,12 +33,7 @@ class NotificationMonitorService : NotificationListenerService() {
             val name = if (splitStr?.size ?: 0 > 1) splitStr?.firstOrNull() else title
             val content = if (splitStr?.size ?: 0 > 1) splitStr?.get(1) else text
 
-            EventBus.getDefault().post(
-                GetNotificationEvent(
-                    name,
-                    content,
-                    pic
-                )
+            EventBus.getDefault().post(GetNotificationEvent(name, content, pic)
             )
         }
     }

@@ -31,6 +31,6 @@ fun showDialog(context: Context, title: String? = null, errorMessage: String?= n
     }
 }
 
-fun showDialog(context: Context, positiveClickListener: View.OnClickListener?) {
-    showDialog(context, null, "要離開app嗎?", "確定", "取消", positiveClickListener)
+fun showDialog(context: Context, title: String?, content: String?, positiveClickListener: View.OnClickListener?) {
+    showDialog(context, title, content,"確定", "取消", positiveClickListener)
 }
